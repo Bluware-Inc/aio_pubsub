@@ -13,12 +13,16 @@ except ImportError:
 
 
 class RedisSubscriber(Subscriber):
-    def __init__(self, sub, channel):
+    def __init__(self, sub):
         self.sub = sub
-        self.channel = channel
 
     def __aiter__(self):
-        return self.channel.iter(encoding="utf-8", decoder=json.loads)
+        return self
+
+    async def __anext__(self):
+        msg = await self.sub.__anext__()
+        return msg["data"]
+
 
 
 class RedisPubSub(PubSub):
@@ -31,18 +35,21 @@ class RedisPubSub(PubSub):
 
     async def publish(self, channel: str, message: Message) -> None:
         if self.connection is None:
-            self.connection = await aioredis.create_redis(self.url)
+            self.connection = await aioredis.Redis.from_url(self.url)
 
-            
-        channels = await self.connection.pubsub_channels(channel)
-        for ch in channels:
-            await self.connection.publish_json(ch, message)
+        channels = await self.connection.pubsub_channels(channel)   
+        for channel in channels:
+            await self.connection.publish(channel, message)
 
     async def subscribe(self, channel) -> "RedisSubscriber":
         if aioredis_installed is False:
             raise RuntimeError("Please install `aioredis`")  # pragma: no cover
 
-        sub = await aioredis.create_redis(self.url)
+        conn = await aioredis.Redis.from_url(self.url, encoding="utf-8", decode_responses=True)
+        sub = conn.pubsub(ignore_subscribe_messages=True)
 
-        channel = await sub.subscribe(channel)
-        return RedisSubscriber(sub, channel[0])
+        await sub.subscribe(channel)
+        return RedisSubscriber(sub.listen())
+
+
+    

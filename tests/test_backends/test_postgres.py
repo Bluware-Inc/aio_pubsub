@@ -1,10 +1,11 @@
 import aiopg
 import pytest
+import pytest_asyncio
 
 from aio_pubsub.backends.postgresql import PostgreSQLPubSub, PostgreSQLSubscriber
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def pg_pool():
     pool = await aiopg.create_pool(
         "dbname=aiopg user=aiopg password=example host=127.0.0.1 port=5432"

@@ -1,10 +1,11 @@
 import motor
 import pytest
+import pytest_asyncio
 
 from aio_pubsub.backends.mongodb import MongoDBPubSub
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def create_pub_sub_conn():
     collection = await MongoDBPubSub.get_collection(host="localhost", port=27017)
     yield collection

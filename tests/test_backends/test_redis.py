@@ -4,23 +4,20 @@ import pytest
 from aio_pubsub.backends.redis import RedisPubSub
 
 
-@pytest.fixture
-async def redis_url():
-    url = "redis://localhost:6379/0?encoding=utf-8"
-    yield url
+REDIS_URL = "redis://localhost:6379/0?encoding=utf-8"
 
 @pytest.mark.asyncio
-async def test_subscriber_isinstance(redis_url):
+async def test_subscriber_isinstance():
     from aio_pubsub.backends.redis import RedisSubscriber
 
-    pubsub = RedisPubSub(redis_url)
+    pubsub = RedisPubSub(REDIS_URL)
     subscriber = await pubsub.subscribe("a_chan")
     assert isinstance(subscriber, RedisSubscriber)
 
 
 @pytest.mark.asyncio
-async def test_iteration_protocol(redis_url):
-    pubsub = RedisPubSub(redis_url)
+async def test_iteration_protocol():
+    pubsub = RedisPubSub(REDIS_URL)
     subscriber = await pubsub.subscribe("a_chan")
     await pubsub.publish("a_chan", "hello world!")
     subscriber = subscriber.__aiter__()
@@ -28,8 +25,8 @@ async def test_iteration_protocol(redis_url):
 
 
 @pytest.mark.asyncio
-async def test_pubsub(redis_url):
-    pubsub = RedisPubSub(redis_url)
+async def test_pubsub():
+    pubsub = RedisPubSub(REDIS_URL)
     subscriber = await pubsub.subscribe("a_chan")
     await pubsub.publish("a_chan", "hello world!")
     await pubsub.publish("a_chan", "hello universe!")
@@ -39,8 +36,8 @@ async def test_pubsub(redis_url):
 
 
 @pytest.mark.asyncio
-async def test_not_subscribed_chan(redis_url):
-    pubsub = RedisPubSub(redis_url)
+async def test_not_subscribed_chan():
+    pubsub = RedisPubSub(REDIS_URL)
     subscriber_a_chan = await pubsub.subscribe("a_chan")
     subscriber_c_chan = await pubsub.subscribe("c_chan")
     await pubsub.publish("a_chan", "hello world!")
@@ -53,8 +50,8 @@ async def test_not_subscribed_chan(redis_url):
 
 
 @pytest.mark.asyncio
-async def test_broadcast(redis_url):
-    pubsub = RedisPubSub(redis_url)
+async def test_broadcast():
+    pubsub = RedisPubSub(REDIS_URL)
     subscriber_1 = await pubsub.subscribe("a_chan")
     subscriber_2 = await pubsub.subscribe("a_chan")
     await pubsub.publish("a_chan", "hello world!")
