@@ -1,4 +1,6 @@
 import json
+import async_timeout
+import asyncio
 
 from aio_pubsub.interfaces import PubSub, Subscriber
 from aio_pubsub.typings import Message
@@ -20,9 +22,15 @@ class RedisSubscriber(Subscriber):
         return self
 
     async def __anext__(self):
-        msg = await self.sub.__anext__()
-        return msg["data"]
-
+        while True:
+            try:
+                async with async_timeout.timeout(1):
+                    message = await self.sub.get_message(ignore_subscribe_messages=True)
+                    if message is not None:
+                        return message["data"]
+                    await asyncio.sleep(0.01)
+            except asyncio.TimeoutError:
+                pass
 
 
 class RedisPubSub(PubSub):
@@ -45,11 +53,11 @@ class RedisPubSub(PubSub):
         if aioredis_installed is False:
             raise RuntimeError("Please install `aioredis`")  # pragma: no cover
 
-        conn = await aioredis.Redis.from_url(self.url, encoding="utf-8", decode_responses=True)
+        conn = await aioredis.Redis.from_url(self.url, encoding="utf-8",  max_connections=10, decode_responses=True)
         sub = conn.pubsub(ignore_subscribe_messages=True)
 
         await sub.subscribe(channel)
-        return RedisSubscriber(sub.listen())
+        return RedisSubscriber(sub)
 
 
     
