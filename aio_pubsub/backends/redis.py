@@ -1,5 +1,4 @@
 import json
-import async_timeout
 import asyncio
 
 from aio_pubsub.interfaces import PubSub, Subscriber
@@ -24,12 +23,13 @@ class RedisSubscriber(Subscriber):
     async def __anext__(self):
         while True:
             try:
-                async with async_timeout.timeout(1):
-                    message = await self.sub.get_message(ignore_subscribe_messages=True)
-                    if message is not None:
-                        return message["data"]
-                    await asyncio.sleep(0.01)
-            except Exception:
+                message = await asyncio.wait_for(
+                    self.sub.get_message(ignore_subscribe_messages=True), timeout=1
+                )
+                if message is not None:
+                    return message["data"]
+                await asyncio.sleep(0.01)
+            except asyncio.TimeoutError:
                 pass
 
 
