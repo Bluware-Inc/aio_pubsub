@@ -29,7 +29,7 @@ class RedisSubscriber(Subscriber):
                     if message is not None:
                         return message["data"]
                     await asyncio.sleep(0.01)
-            except (asyncio.TimeoutError, async_timeout.TimeoutError):
+            except Exception:
                 pass
 
 
